@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   List,
   ListItem,
@@ -9,7 +9,7 @@ import {
   Box,
   Paper,
 } from "@mui/material";
-// import axios from "axios";
+import axios from "axios";
 import { blue } from "@mui/material/colors";
 import AccessTimeIcon from "@mui/icons-material/AccessTime"; // Icon for time
 
@@ -17,9 +17,9 @@ function TimeTable() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timeTableData, setTimeTableData] = useState([]);
 
-  //   useEffect(() => {
-  //     fetchTimeTableData(selectedDate);
-  //   }, [selectedDate]);
+  useEffect(() => {
+    fetchTimeTableData(selectedDate);
+  }, [selectedDate]);
 
   const getTimeFromString = (data) => {
     if (typeof data === "string") {
@@ -29,39 +29,38 @@ function TimeTable() {
     return undefined;
   };
 
-  //   const fetchTimeTableData = async (date) => {
-  //     const dayOfMonth = date.getDate();
-  //     const token = sessionStorage.getItem("token");
-  //     const url =
-  //       "https://abes.platform.simplifii.com/api/v1/custom/getMyScheduleStudent";
+  const fetchTimeTableData = async (date) => {
+    const dayOfMonth = date.getDate();
+    const token = sessionStorage.getItem("token");
+    const url =
+      "https://abes.platform.simplifii.com/api/v1/custom/getMyScheduleStudent";
 
-  //     try {
-  //       const response = await axios.get(url, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       if (
-  //         response.data &&
-  //         response.data.response &&
-  //         response.data.response.data
-  //       ) {
-  //         const filteredData = response.data.response.data
-  //           .filter((row) => row[`c${dayOfMonth}`] && row.course_name)
-  //           .map((item) => ({
-  //             ...item,
-  //             [`c${dayOfMonth}`]: stripHtml(item[`c${dayOfMonth}`]),
-  //           }))
-  //           .sort((a, b) => a.course_name.localeCompare(b.course_name));
-  //         setTimeTableData(filteredData);
-  //       }
-  //     } catch (error) {
-  //       console.error("Failed to fetch time table:", error);
-  //     }
-  //   };
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (
+        response.data &&
+        response.data.response &&
+        response.data.response.data
+      ) {
+        const filteredData = response.data.response.data
+          .filter((row) => row[`c${dayOfMonth}`] && row.course_name)
+          .map((item) => ({
+            ...item,
+            [`c${dayOfMonth}`]: stripHtml(item[`c${dayOfMonth}`]),
+          }))
+          .sort((a, b) => a.course_name.localeCompare(b.course_name));
+        setTimeTableData(filteredData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch time table:", error);
+    }
+  };
 
   // Utility function to remove HTML tags
   const stripHtml = (html) => {
     const doc = new DOMParser().parseFromString(html, "text/html");
-    console.log(isCurrentOrConsecutiveClass(doc.body.textContent));
     return doc.body.textContent || "";
   };
 
@@ -77,30 +76,6 @@ function TimeTable() {
     setSelectedDate(newDate);
   };
 
-  const isCurrentOrConsecutiveClass = (timeString) => {
-    const utcCurrentTime = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
-    const currentTime = new Date(utcCurrentTime.getTime() + istOffset);
-
-    // Split the time string into blocks of "HH:MM - HH:MM"
-    const timeSlots = timeString.match(/\d{2}:\d{2} - \d{2}:\d{2}/g);
-    if (!timeSlots) return false; // Return false if no valid time slots found
-
-    return timeSlots.some((slot) => {
-      const [startTimeString, endTimeString] = slot.split(" - ");
-      const [startHours, startMinutes] = startTimeString.split(":").map(Number);
-      const [endHours, endMinutes] = endTimeString.split(":").map(Number);
-
-      const startTime = new Date(currentTime);
-      startTime.setHours(startHours, startMinutes, 0, 0);
-
-      const endTime = new Date(currentTime);
-      endTime.setHours(endHours, endMinutes, 0, 0);
-
-      // Check if the current IST time is within the start and end times
-      return currentTime >= startTime && currentTime <= endTime;
-    });
-  };
   return (
     <Box sx={{ maxWidth: 650, mx: "auto", mr: 1 }}>
       <Typography
@@ -169,15 +144,7 @@ function TimeTable() {
                     fill="currentColor"
                     d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
                   />
-                  <AccessTimeIcon
-                    color={
-                      isCurrentOrConsecutiveClass(
-                        stripHtml(item[`c${selectedDate.getDate()}`])
-                      )
-                        ? "inherit"
-                        : "error"
-                    }
-                  />
+                  <AccessTimeIcon />
                 </ListItemIcon>
                 <ListItemText
                   primary={item.course_name.split("/")[2]}
